@@ -1,0 +1,57 @@
+# AAP Hook Definitions for Cost Guard
+# Two hooks: a guard that blocks over-budget execution, and an observer that records cost.
+
+---
+# Hook 1: Pre-execution budget gate
+# Fires BEFORE every action. Checks cumulative spend against budget.
+# If over budget: abort (enforce), warn (warn_only), or silent (log_only).
+aap: 0.1.0
+kind: Hook
+
+metadata:
+  name: cost-budget-gate
+  version: 1.0.0
+  type: guard
+
+trigger:
+  event: before_execute
+  condition: always
+
+action:
+  type: resource_check
+  config:
+    checks:
+      - state.total_cost_usd < inputs.max_cost_usd
+      - state.total_tokens < inputs.max_tokens
+    on_exceed: $inputs.enforcement
+    message: >
+      Budget exceeded: $${state.total_cost_usd} of $${inputs.max_cost_usd}
+      (${state.total_tokens} of ${inputs.max_tokens} tokens). Action blocked.
+
+---
+# Hook 2: Post-execution cost recorder
+# Fires AFTER every action. Extracts cost/tokens from the trace and
+# updates running totals in session state.
+aap: 0.1.0
+kind: Hook
+
+metadata:
+  name: cost-recorder
+  version: 1.0.0
+  type: observe
+
+trigger:
+  event: after_execute
+  condition: always
+
+action:
+  type: observe
+  config:
+    capture:
+      - trace.attributes.aap.resources.tokens_used
+      - trace.attributes.aap.resources.cost_usd
+    update_state:
+      total_cost_usd: state.total_cost_usd + trace.attributes.aap.resources.cost_usd
+      total_tokens: state.total_tokens + trace.attributes.aap.resources.tokens_used
+      action_count: state.action_count + 1
+      last_action_cost: trace.attributes.aap.resources.cost_usd

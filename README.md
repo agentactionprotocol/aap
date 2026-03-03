@@ -112,11 +112,17 @@ packages/
     handler.ts              #   Example: OTel logger wrapped with the adapter
 
 examples/
-  openclaw-otel-logger/     # Reference implementation: AAP + OpenClaw + OpenTelemetry
+  openclaw-otel-logger/     # Example 1: AAP + OpenClaw + OpenTelemetry (observe hooks)
     action.aap.yaml         #   AAP Action manifest
     contract.aap.yaml       #   AAP Contract definition
     hooks.aap.yaml          #   Six AAP observe hooks
     handler.ts              #   Standalone OTel hook handler
+
+  cost-guard/               # Example 2: Session budget enforcement (guard hooks)
+    action.aap.yaml         #   AAP Action manifest — budget config as inputs
+    contract.aap.yaml       #   AAP Contract — spend status as outputs
+    hooks.aap.yaml          #   Guard hook (before) + observe hook (after)
+    handler.ts              #   Zero-dependency budget enforcer
 ```
 
 ## Read the Spec

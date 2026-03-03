@@ -1,0 +1,107 @@
+aap: 0.1.0
+kind: Action
+
+metadata:
+  name: cost-guard
+  version: 1.0.0
+  author: agentactionprotocol
+  license: MIT
+  description: >
+    Session-level cost and token budget enforcement for AI agents.
+    Tracks cumulative spend across all actions in a session, warns
+    at a configurable threshold, and blocks execution when the
+    budget cap is reached.
+  tags: [cost, budget, guard, safety, resource-management]
+  runtime_compatibility:
+    - claude@4.*
+    - openai@gpt-4*
+    - openclaw@*
+    - cli@*
+
+context:
+  required: []
+  optional:
+    - type: runtime_context
+      description: Session metadata for tracking spend per-session
+
+inputs:
+  max_cost_usd:
+    type: float
+    default: 1.00
+    description: Maximum total cost in USD before execution is blocked
+  max_tokens:
+    type: integer
+    default: 100000
+    description: Maximum total tokens before execution is blocked
+  warn_threshold:
+    type: float
+    range: [0, 1]
+    default: 0.8
+    description: >
+      Fraction of budget at which to start warning (0.8 = warn at 80%).
+  enforcement:
+    type: enum
+    values: [enforce, warn_only, log_only]
+    default: enforce
+    description: >
+      enforce = block when over budget.
+      warn_only = warn but allow execution.
+      log_only = silent tracking, no warnings or blocks.
+
+outputs:
+  status:
+    type: enum
+    values: [ok, warning, blocked]
+    description: Current budget status
+  total_cost_usd:
+    type: float
+    description: Cumulative cost this session
+  total_tokens:
+    type: integer
+    description: Cumulative tokens this session
+  remaining_cost_usd:
+    type: float
+    description: Remaining budget
+  remaining_tokens:
+    type: integer
+    description: Remaining token budget
+  action_count:
+    type: integer
+    description: Number of actions executed this session
+  warnings_issued:
+    type: integer
+    description: Number of budget warnings emitted this session
+
+execution:
+  type: cli
+  command: node
+  args: ["./dist/handler.js"]
+  env:
+    AAP_MAX_COST_USD: "$inputs.max_cost_usd"
+    AAP_MAX_TOKENS: "$inputs.max_tokens"
+    AAP_WARN_THRESHOLD: "$inputs.warn_threshold"
+    AAP_ENFORCEMENT: "$inputs.enforcement"
+  timeout_ms: 0
+  sandbox: false
+
+permissions:
+  capabilities:
+    - env:read:AAP_*
+  roles: []
+
+resources:
+  max_tokens: 0
+  max_latency_ms: 0
+  max_cost_usd: 0.00
+
+hooks:
+  on_error: fallback-to-warn
+
+state:
+  checkpoint: false
+  context_keys:
+    - total_cost_usd
+    - total_tokens
+    - action_count
+    - warnings_issued
+    - last_action_cost

@@ -1,0 +1,56 @@
+aap: 0.1.0
+kind: Contract
+
+for: cost-guard@1.0.0
+
+input_schema:
+  type: object
+  required: []
+  properties:
+    max_cost_usd:
+      type: number
+      minimum: 0
+    max_tokens:
+      type: integer
+      minimum: 0
+    warn_threshold:
+      type: number
+      minimum: 0
+      maximum: 1
+    enforcement:
+      type: string
+      enum: [enforce, warn_only, log_only]
+
+output_schema:
+  type: object
+  required: [status, total_cost_usd, total_tokens]
+  properties:
+    status:
+      type: string
+      enum: [ok, warning, blocked]
+    total_cost_usd:
+      type: number
+      minimum: 0
+    total_tokens:
+      type: integer
+      minimum: 0
+    remaining_cost_usd:
+      type: number
+    remaining_tokens:
+      type: integer
+    action_count:
+      type: integer
+      minimum: 0
+    warnings_issued:
+      type: integer
+      minimum: 0
+
+invariants:
+  - output.total_cost_usd >= 0
+  - output.total_tokens >= 0
+  - output.action_count >= 0
+
+resource_limits:
+  max_tokens: 0
+  max_cost_usd: 0.00
+  max_retries: 0
