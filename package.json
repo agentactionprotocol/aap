@@ -1,0 +1,10 @@
+{
+  "name": "aap-spec",
+  "private": true,
+  "description": "AAP: Agent Action Protocol — a portable, composable spec for AI agents taking action in the world",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ]
+}

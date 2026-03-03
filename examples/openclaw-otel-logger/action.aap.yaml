@@ -1,0 +1,98 @@
+aap: 0.1.0
+kind: Action
+
+metadata:
+  name: openclaw-otel-logger
+  version: 1.0.0
+  author: kendall-miller
+  license: MIT
+  description: >
+    Comprehensive observability for OpenClaw agents. Logs every action,
+    decision, tool call, session event, and error as OpenTelemetry spans
+    and events. Attaches to OpenClaw's hook system and emits OTLP-compatible
+    traces to any OTel collector (Jaeger, Datadog, Honeycomb, Grafana Tempo).
+  tags: [observability, openclaw, opentelemetry, logging, tracing]
+  runtime_compatibility:
+    - openclaw@*
+    - cli@*
+
+context:
+  required: []
+  optional:
+    - type: openclaw_gateway_config
+      description: OpenClaw gateway config for session/channel metadata enrichment
+
+inputs:
+  otel_endpoint:
+    type: string
+    default: "http://localhost:4318/v1/traces"
+    description: OTLP HTTP endpoint for trace export
+  otel_protocol:
+    type: enum
+    values: [http, grpc]
+    default: http
+    description: OTLP transport protocol
+  service_name:
+    type: string
+    default: "openclaw-agent"
+    description: OTel service.name resource attribute
+  log_level:
+    type: enum
+    values: [minimal, standard, verbose]
+    default: standard
+    description: >
+      minimal = actions + errors only.
+      standard = actions + tool calls + decisions + errors.
+      verbose = everything including token usage, model selection, context mutations.
+  sample_rate:
+    type: float
+    range: [0, 1]
+    default: 1.0
+    description: Trace sampling rate (1.0 = log everything)
+  additional_attributes:
+    type: object
+    default: {}
+    description: Extra resource attributes to attach to all spans
+
+outputs:
+  status:
+    type: enum
+    values: [active, degraded, failed]
+    description: Current state of the OTel exporter
+  spans_exported:
+    type: integer
+    description: Total spans exported this session
+  last_export_at:
+    type: string
+    description: ISO timestamp of last successful export
+
+execution:
+  type: cli
+  command: node
+  args: ["./dist/handler.js"]
+  env:
+    OTEL_EXPORTER_OTLP_ENDPOINT: "$inputs.otel_endpoint"
+    OTEL_EXPORTER_OTLP_PROTOCOL: "$inputs.otel_protocol"
+    OTEL_SERVICE_NAME: "$inputs.service_name"
+  timeout_ms: 0  # long-running, lifecycle-bound
+  sandbox: false  # must run in-process with gateway
+
+permissions:
+  capabilities:
+    - network:outbound:*  # OTel collector endpoint
+    - env:read:OTEL_*
+    - file:read  # read openclaw config for enrichment
+  roles: []
+
+resources:
+  max_tokens: 0  # no LLM usage
+  max_latency_ms: 0  # no latency budget (observer)
+  max_cost_usd: 0.00
+
+hooks:
+  before_execute: validate-otel-endpoint
+  on_error: fallback-to-file-logger
+
+state:
+  checkpoint: false
+  context_keys: [spans_exported, exporter_status, session_id]

@@ -1,0 +1,27 @@
+{
+  "name": "@aap/openclaw-otel-logger",
+  "version": "1.0.0",
+  "description": "AAP-compliant OpenTelemetry logger for OpenClaw",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/handler.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "openclaw": {
+    "hooks": ["./"]
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-node": "^0.52.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.52.0",
+    "@opentelemetry/resources": "^1.25.0",
+    "@opentelemetry/semantic-conventions": "^1.25.0",
+    "@opentelemetry/sdk-trace-base": "^1.25.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^22.0.0"
+  }
+}

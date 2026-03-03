@@ -1,0 +1,163 @@
+# AAP Hook Definitions for OpenClaw OTel Logger
+# These map AAP hook primitives to OpenClaw gateway lifecycle events.
+
+---
+# Hook 1: Agent Bootstrap Tracing
+aap: 0.1.0
+kind: Hook
+
+metadata:
+  name: otel-trace-bootstrap
+  version: 1.0.0
+  type: observe
+
+trigger:
+  event: before_execute
+  condition: action.metadata.name == "agent:bootstrap"
+
+action:
+  type: observe
+  config:
+    span_name: "openclaw.agent.bootstrap"
+    attributes:
+      aap.hook.type: observe
+      openclaw.event: agent:bootstrap
+    capture:
+      - context.bootstrapFiles
+      - context.workspace
+      - context.sessionKey
+
+---
+# Hook 2: Command Event Tracing (all slash commands)
+aap: 0.1.0
+kind: Hook
+
+metadata:
+  name: otel-trace-commands
+  version: 1.0.0
+  type: observe
+
+trigger:
+  event: after_execute
+  condition: always
+
+action:
+  type: observe
+  config:
+    span_name: "openclaw.command.${event.action}"
+    attributes:
+      aap.hook.type: observe
+      openclaw.event: command
+      openclaw.command.action: "${event.action}"
+      openclaw.session.key: "${event.sessionKey}"
+      openclaw.channel: "${event.channel}"
+
+---
+# Hook 3: Tool Execution Tracing
+aap: 0.1.0
+kind: Hook
+
+metadata:
+  name: otel-trace-tool-execution
+  version: 1.0.0
+  type: observe
+
+trigger:
+  event: after_execute
+  condition: event.type == "tool_result"
+
+action:
+  type: observe
+  config:
+    span_name: "openclaw.tool.${event.toolName}"
+    attributes:
+      aap.hook.type: observe
+      openclaw.tool.name: "${event.toolName}"
+      openclaw.tool.status: "${event.exitCode}"
+      openclaw.session.key: "${event.sessionKey}"
+    capture:
+      - event.duration_ms
+      - event.exitCode
+      - event.stderr  # only if log_level == verbose
+
+---
+# Hook 4: Tool Result Persistence Tracing
+aap: 0.1.0
+kind: Hook
+
+metadata:
+  name: otel-trace-tool-persist
+  version: 1.0.0
+  type: observe
+
+trigger:
+  event: after_execute
+  condition: event.type == "tool_result_persist"
+
+action:
+  type: observe
+  config:
+    span_name: "openclaw.tool.persist"
+    attributes:
+      aap.hook.type: observe
+      openclaw.event: tool_result_persist
+    capture:
+      - event.toolName
+      - event.resultSize
+
+---
+# Hook 5: Error Tracing
+aap: 0.1.0
+kind: Hook
+
+metadata:
+  name: otel-trace-errors
+  version: 1.0.0
+  type: observe
+
+trigger:
+  event: on_error
+  condition: always
+
+action:
+  type: observe
+  config:
+    span_name: "openclaw.error"
+    span_status: ERROR
+    attributes:
+      aap.hook.type: observe
+      openclaw.error.type: "${error.type}"
+      openclaw.error.message: "${error.message}"
+      openclaw.session.key: "${error.sessionKey}"
+    capture:
+      - error.stack
+      - error.context
+
+---
+# Hook 6: Session Lifecycle Tracing
+aap: 0.1.0
+kind: Hook
+
+metadata:
+  name: otel-trace-session
+  version: 1.0.0
+  type: observe
+
+trigger:
+  event: after_execute
+  condition: event.type in ["session:start", "session:end", "session:compact"]
+
+action:
+  type: observe
+  config:
+    span_name: "openclaw.session.${event.type}"
+    attributes:
+      aap.hook.type: observe
+      openclaw.session.key: "${event.sessionKey}"
+      openclaw.session.event: "${event.type}"
+      openclaw.session.model: "${event.model}"
+      openclaw.session.tokens_used: "${event.tokensUsed}"
+    capture:
+      - event.cost_usd
+      - event.model
+      - event.thinkingLevel

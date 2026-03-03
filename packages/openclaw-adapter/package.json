@@ -1,0 +1,30 @@
+{
+  "name": "@aap/openclaw-adapter",
+  "version": "0.1.0",
+  "description": "AAP runtime adapter for OpenClaw — manifest parsing, contract validation, context injection",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+  },
+  "dependencies": {
+    "yaml": "^2.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^22.0.0"
+  },
+  "peerDependencies": {
+    "yaml": "^2.4.0"
+  }
+}

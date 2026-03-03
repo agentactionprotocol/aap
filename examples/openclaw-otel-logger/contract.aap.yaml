@@ -1,0 +1,54 @@
+aap: 0.1.0
+kind: Contract
+
+for: openclaw-otel-logger@1.0.0
+
+input_schema:
+  type: object
+  required: []
+  properties:
+    otel_endpoint:
+      type: string
+      format: uri
+    otel_protocol:
+      type: string
+      enum: [http, grpc]
+    service_name:
+      type: string
+      minLength: 1
+      maxLength: 256
+    log_level:
+      type: string
+      enum: [minimal, standard, verbose]
+    sample_rate:
+      type: number
+      minimum: 0
+      maximum: 1
+    additional_attributes:
+      type: object
+      additionalProperties:
+        type: string
+
+output_schema:
+  type: object
+  required: [status, spans_exported]
+  properties:
+    status:
+      type: string
+      enum: [active, degraded, failed]
+    spans_exported:
+      type: integer
+      minimum: 0
+    last_export_at:
+      type: string
+      format: date-time
+
+invariants:
+  - output.spans_exported >= 0
+  - output.status in ["active", "degraded", "failed"]
+
+resource_limits:
+  max_tokens: 0
+  max_latency_ms: 0
+  max_cost_usd: 0.00
+  max_retries: 3
