@@ -4,7 +4,7 @@
 
 > **Status:** Draft v0.1  
 > **Date:** March 2026  
-> **License:** Apache 2.0
+> **License:** MIT
 
 ---
 
